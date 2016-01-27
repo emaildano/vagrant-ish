@@ -4,6 +4,9 @@
 require "yaml"
 VAGRANTFILE_API_VERSION = "2"
 
+ANSIBLE_PATH = __dir__
+config_file = File.join(ANSIBLE_PATH, 'launch-pad/group_vars', 'all', 'main.yml')
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Box
@@ -21,10 +24,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Hosts
   # config.hostsupdater.aliases = ["example.dev"]
 
-
-  ANSIBLE_PATH = __dir__
-  config_file = File.join(ANSIBLE_PATH, 'launch-pad/group_vars', 'all', 'main.yml')
-
   if File.exists?(config_file)
     wordpress_sites = YAML.load_file(config_file)['wordpress_sites']
     fail_with_message "No sites found in #{config_file}." if wordpress_sites.to_h.empty?
@@ -40,6 +39,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.hostsupdater.aliases = aliases + www_aliases
   else
     fail_with_message "vagrant-hostsupdater missing, please install the plugin with this command:\nvagrant plugin install vagrant-hostsupdater"
+  end
+
+  # Folder Sync
+  # if !Vagrant.has_plugin? 'vagrant-bindfs'
+  #   fail_with_message "vagrant-bindfs missing, please install the plugin with this command:\nvagrant plugin install vagrant-bindfs"
+  # else
+  #   wordpress_sites.each_pair do |_name, site|
+  #     config.vm.synced_folder local_site_path(site), nfs_path(name), type: 'nfs'
+  #     config.bindfs.bind_folder nfs_path(name), remote_site_path(name), u: 'vagrant', g: 'www-data', o: 'nonempty'
+  #   end
+  # end
+
+  def local_site_path(site)
+    File.expand_path(site['local_path'], ANSIBLE_PATH)
   end
 
 end
